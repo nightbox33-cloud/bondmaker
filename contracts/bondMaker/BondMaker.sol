@@ -377,45 +377,28 @@ abstract contract BondMaker is UseSafeMath, BondMakerInterface, Time, Polyline {
         );
         _assertBeforeMaturity(inputMaturity);
 
-        bool flag;
-        uint256 exceptionCount;
+        // A bond group is a multiset: the same bondID may occur more than
+        // once, and each occurrence contributes its payoff once. Exceptions
+        // therefore have to be subtracted as a multiset as well. For every
+        // exception bondID, the same number of occurrences is skipped on
+        // both sides, which makes the residual burned and minted multisets
+        // equivalent. Checking only the total number of exception matches
+        // would let repeated IDs compensate for an exception that is absent
+        // from one group.
+        _assertExceptionBondsIncluded(inputIDs, exceptionBonds);
+        _assertExceptionBondsIncluded(outputIDs, exceptionBonds);
+
         for (uint256 i = 0; i < inputIDs.length; i++) {
-            // this flag control checks whether the bond is in the scope of burn/mint
-            flag = true;
-            for (uint256 j = 0; j < exceptionBonds.length; j++) {
-                if (exceptionBonds[j] == inputIDs[i]) {
-                    flag = false;
-                    // this count checks if all the bondIDs in exceptionBonds are included both in inputBondGroupID and outputBondGroupID
-                    exceptionCount = exceptionCount.add(1);
-                }
-            }
-            if (flag) {
+            if (!_isExceptedOccurrence(exceptionBonds, inputIDs, i)) {
                 _burnBond(inputIDs[i], msg.sender, amount);
             }
         }
 
-        require(
-            exceptionBonds.length == exceptionCount,
-            "All the exceptionBonds need to be included in input"
-        );
-
         for (uint256 i = 0; i < outputIDs.length; i++) {
-            flag = true;
-            for (uint256 j = 0; j < exceptionBonds.length; j++) {
-                if (exceptionBonds[j] == outputIDs[i]) {
-                    flag = false;
-                    exceptionCount = exceptionCount.sub(1);
-                }
-            }
-            if (flag) {
+            if (!_isExceptedOccurrence(exceptionBonds, outputIDs, i)) {
                 _mintBond(outputIDs[i], msg.sender, amount);
             }
         }
-
-        require(
-            exceptionCount == 0,
-            "All the exceptionBonds need to be included both in input and output"
-        );
 
         emit LogExchangeEquivalentBonds(
             msg.sender,
@@ -716,6 +699,72 @@ abstract contract BondMaker is UseSafeMath, BondMakerInterface, Time, Polyline {
 
     function _assertNonEmptyBondGroup(bytes32[] memory bondIDs) internal pure {
         require(bondIDs.length != 0, "the list of bond ID must be non-empty");
+    }
+
+    function _assertExceptionBondsIncluded(
+        bytes32[] memory bondIDs,
+        bytes32[] memory exceptionBonds
+    ) internal pure {
+        for (uint256 i = 0; i < exceptionBonds.length; i++) {
+            if (!_isFirstOccurrence(exceptionBonds, i)) {
+                continue;
+            }
+
+            uint256 exceptionCount = _countBondID(
+                exceptionBonds,
+                exceptionBonds[i]
+            );
+            require(
+                _countBondID(bondIDs, exceptionBonds[i]) >= exceptionCount,
+                "exception bond is not included in bond group"
+            );
+        }
+    }
+
+    function _isExceptedOccurrence(
+        bytes32[] memory exceptionBonds,
+        bytes32[] memory bondIDs,
+        uint256 index
+    ) internal pure returns (bool) {
+        bytes32 bondID = bondIDs[index];
+        uint256 exceptionCount = _countBondID(exceptionBonds, bondID);
+        if (exceptionCount == 0) {
+            return false;
+        }
+
+        return _occurrenceNumber(bondIDs, index) <= exceptionCount;
+    }
+
+    function _isFirstOccurrence(bytes32[] memory bondIDs, uint256 index)
+        internal
+        pure
+        returns (bool)
+    {
+        return _occurrenceNumber(bondIDs, index) == 1;
+    }
+
+    function _occurrenceNumber(bytes32[] memory bondIDs, uint256 index)
+        internal
+        pure
+        returns (uint256 count)
+    {
+        for (uint256 i = 0; i <= index; i++) {
+            if (bondIDs[i] == bondIDs[index]) {
+                count++;
+            }
+        }
+    }
+
+    function _countBondID(bytes32[] memory bondIDs, bytes32 bondID)
+        internal
+        pure
+        returns (uint256 count)
+    {
+        for (uint256 i = 0; i < bondIDs.length; i++) {
+            if (bondIDs[i] == bondID) {
+                count++;
+            }
+        }
     }
 
     function _assertBeforeMaturity(uint256 maturity) internal view {

@@ -1,10 +1,14 @@
 pragma solidity 0.6.6;
 
 import "./BondMaker.sol";
+import "./BondMakerCollateralizedErc20Interface.sol";
 import "../bondTokenName/BondTokenNameInterface.sol";
 import "../../node_modules/@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-contract BondMakerCollateralizedErc20 is BondMaker {
+contract BondMakerCollateralizedErc20 is
+    BondMaker,
+    BondMakerCollateralizedErc20Interface
+{
     using SafeERC20 for ERC20;
 
     ERC20 internal immutable COLLATERALIZED_TOKEN;
@@ -56,6 +60,7 @@ contract BondMakerCollateralizedErc20 is BondMaker {
      */
     function issueNewBonds(uint256 bondGroupID, uint256 amount)
         public
+        override
         returns (uint256 bondAmount)
     {
         uint256 allowance = COLLATERALIZED_TOKEN.allowance(

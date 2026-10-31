@@ -1,13 +1,14 @@
 pragma solidity 0.6.6;
 
 import {BondType} from "./Enums.sol";
+import "./BondPricerInterface.sol";
 import "../math/UseSafeMath.sol";
 import "../math/AdvancedMath.sol";
 
 /**
  * @dev The decimals of price, point, spotPrice and strikePrice are all the same.
  */
-contract GeneralizedPricing is UseSafeMath, AdvancedMath {
+contract GeneralizedPricing is BondPricerInterface, UseSafeMath, AdvancedMath {
     /**
      * @dev sqrt(365*86400) * 10^8
      */
@@ -25,11 +26,11 @@ contract GeneralizedPricing is UseSafeMath, AdvancedMath {
      **/
     function calcPriceAndLeverage(
         BondType bondType,
-        uint256[] memory points,
+        uint256[] calldata points,
         int256 spotPrice,
         int256 volatilityE8,
         int256 untilMaturity
-    ) public pure returns (uint256 price, uint256 leverageE8) {
+    ) external view override returns (uint256 price, uint256 leverageE8) {
         if (bondType == BondType.LBT_SHAPE) {
             (price, leverageE8) = _calcLbtShapePriceAndLeverage(
                 points,

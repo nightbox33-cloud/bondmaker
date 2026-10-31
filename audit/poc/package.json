@@ -1,0 +1,21 @@
+{
+  "name": "bondmaker-audit-poc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone PoC and regression harness for the BondMaker exchangeEquivalentBonds audit finding.",
+  "scripts": {
+    "compile": "node compile.js",
+    "compile:all": "node compile-all.js",
+    "poc:funded-eth": "node poc-funded-eth.js",
+    "poc:zero-input-eth": "node poc-zero-input-eth.js",
+    "poc:zero-input-usdc": "node poc-zero-input-usdc.js",
+    "regression": "node regression.js",
+    "scan:pricer": "python3 scan_pricer.py"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "3.0.1",
+    "ethers": "5.7.2",
+    "ganache": "7.9.2",
+    "solc": "0.6.6"
+  }
+}

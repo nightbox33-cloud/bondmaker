@@ -1,7 +1,7 @@
 pragma solidity 0.6.6;
 
 import "./PriceInverseOracle.sol";
-import "./Oracle.test.sol";
+import "./oracle.test.sol";
 import "../math/UseSafeMath.sol";
 
 

@@ -1,15 +1,15 @@
 pragma solidity 0.6.6;
 
 import "./BondPricerInterface.sol";
-import "./GeneralizedPricing.sol";
+import "../math/UseSafeMath.sol";
 
 abstract contract CustomGeneralizedPricing is BondPricerInterface {
     using SafeMath for uint256;
 
-    GeneralizedPricing internal immutable _originalBondPricerAddress;
+    BondPricerInterface internal immutable _originalBondPricer;
 
     constructor(address originalBondPricerAddress) public {
-        _originalBondPricerAddress = GeneralizedPricing(originalBondPricerAddress);
+        _originalBondPricer = BondPricerInterface(originalBondPricerAddress);
     }
 
     function calcPriceAndLeverage(
@@ -19,7 +19,7 @@ abstract contract CustomGeneralizedPricing is BondPricerInterface {
         int256 volatilityE8,
         int256 untilMaturity
     ) external view override returns (uint256 price, uint256 leverageE8) {
-        (price, leverageE8) = _originalBondPricerAddress.calcPriceAndLeverage(
+        (price, leverageE8) = _originalBondPricer.calcPriceAndLeverage(
             bondType,
             points,
             spotPrice,
@@ -76,7 +76,7 @@ abstract contract CustomGeneralizedPricing is BondPricerInterface {
     }
 
     function originalBondPricer() external view returns (address originalBondPricerAddress) {
-        originalBondPricerAddress = address(_originalBondPricerAddress);
+        originalBondPricerAddress = address(_originalBondPricer);
     }
 
     function _isAcceptableLbt(

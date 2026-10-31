@@ -2,9 +2,14 @@ pragma solidity 0.6.6;
 
 import "../util/TransferETH.sol"; // this contract has payable function
 import "./BondMaker.sol";
+import "./BondMakerCollateralizedEthInterface.sol";
 import "../bondTokenName/BondTokenNameInterface.sol";
 
-contract BondMakerCollateralizedEth is BondMaker, TransferETH {
+contract BondMakerCollateralizedEth is
+    BondMaker,
+    BondMakerCollateralizedEthInterface,
+    TransferETH
+{
     address private constant ETH = address(0);
 
     BondTokenNameInterface internal immutable BOND_TOKEN_NAMER;
@@ -32,6 +37,7 @@ contract BondMakerCollateralizedEth is BondMaker, TransferETH {
     function issueNewBonds(uint256 bondGroupID)
         public
         payable
+        override
         returns (uint256 bondAmount)
     {
         return _issueNewBonds(bondGroupID, msg.value);
